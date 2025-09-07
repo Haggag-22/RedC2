@@ -51,7 +51,6 @@ def register():
 # ----------------------------
 @app.route("/heartbeat", methods=["POST"])
 def heartbeat():
-    
     data = request.get_json()
     agent_id = data.get("agent_id")
 
@@ -60,16 +59,8 @@ def heartbeat():
 
     agent = Agent.query.get(agent_id)
     if agent:
-        now = datetime.utcnow()
-        delta = (now - agent.last_seen).total_seconds()
-
-        if delta < 120:
-            agent.status = "Alive"
-        else:
-            agent.status = "Dead"
-
-        agent.last_seen = now
-
+        agent.last_seen = datetime.utcnow()
+        db.session.commit()
 
     cmds = Command.query.filter_by(agent_id=agent_id, status="Queued").all()
     cmd_list = [{"command_id": c.id, "command": c.command} for c in cmds]
@@ -77,7 +68,8 @@ def heartbeat():
     return jsonify({
         "agent_id": agent_id,
         "commands": cmd_list
-        })
+    })
+
 
 
 # ----------------------------
@@ -195,7 +187,8 @@ def monitor_agents():
                 delta = (now - a.last_seen).total_seconds()
                 a.status = "Alive" if delta < 120 else "Dead"
             db.session.commit()
-        time.sleep(30)  
+        time.sleep(30)
+
 
 
 if __name__ == "__main__":
