@@ -197,4 +197,4 @@ if __name__ == "__main__":
     Thread(target=poll_reddit, daemon=True).start()
     Thread(target=monitor_agents, daemon=True).start()
 
-    app.run(host="192.168.1.76", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
