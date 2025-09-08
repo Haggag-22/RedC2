@@ -1,2 +1,13 @@
 config.json
-/instance
+
+# Ignore Flask instance folder (databases, secrets, etc.)
+instance/
+
+# Ignore all SQLite databases
+*.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
