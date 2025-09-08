@@ -139,6 +139,19 @@ def mark_processed():
 
     return jsonify({"status": "ok", "post_id": post_id})
 
+@app.route("/agents", methods=["GET"])
+def list_agents():
+    agents = Agent.query.all()
+    data = []
+    for a in agents:
+        data.append({
+            "agent_id": a.agent_id,
+            "hostname": a.hostname,
+            "last_seen": a.last_seen.isoformat() if a.last_seen else None,
+            "status": a.status
+        })
+    return jsonify(data)
+
 # ----------------------------
 # Reddit Poller (runs in background thread)
 # ----------------------------
