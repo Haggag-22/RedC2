@@ -1,6 +1,6 @@
 config.json
 
-# Ignore Flask instance folder (databases, secrets, etc.)
+# Ignore Flask instance folder
 instance/
 
 # Ignore all SQLite databases
