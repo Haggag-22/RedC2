@@ -2,7 +2,7 @@ import requests
 import sys
 
 
-SERVER_URL = "http://192.168.1.69:5555"
+SERVER_URL = "http://192.168.1.76:5555"
 GREEN = "\033[92m"
 RED   = "\033[91m"
 BLUE  = "\033[94m"
