@@ -33,6 +33,7 @@ def register():
     agent_id = data.get("agent_id")
     hostname = data.get("hostname")
     local_ip = data.get("local_ip")
+    os_info = data.get("os_info")
 
     if not agent_id:
         return jsonify({"error": "no agent_id provided"}), 400
@@ -41,6 +42,7 @@ def register():
     if not agent:
         agent = Agent(
             agent_id=agent_id,
+            os_info=os_info,
             hostname=hostname,
             local_ip=local_ip,
             last_seen=datetime.now(timezone.utc),
@@ -149,6 +151,7 @@ def list_agents():
             "agent_id": a.agent_id,
             "hostname": a.hostname,
             "local_ip": a.local_ip,
+            "os_info": a.os_info,
             "last_seen": a.last_seen.isoformat() if a.last_seen else None,
             "status": a.status
         })
@@ -212,7 +215,7 @@ def monitor_agents():
         with app.app_context():
             agents = Agent.query.all()
             for a in agents:
-                delta = (now - a.last_seen).total_seconds() if a.last_seen else 999999
+                delta = ((now - a.last_seen.replace(tzinfo=timezone.utc)).total_seconds() if a.last_seen else 999999)
                 a.status = "Alive" if delta < 120 else "Dead"
             db.session.commit()
         time.sleep(30)
@@ -234,4 +237,4 @@ if __name__ == "__main__":
     Thread(target=poll_reddit, daemon=True).start()
     Thread(target=monitor_agents, daemon=True).start()
 
-    app.run(host=SERVER_HOST, port=SERVER_PORT, debug=True)
+    app.run(host=SERVER_HOST, port=SERVER_PORT, debug=False)

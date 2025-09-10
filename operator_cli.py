@@ -33,69 +33,10 @@ def list_agents():
             print("No agents registered.")
             return
         for count, a in enumerate(data, start=1):
-            print(f"{count}: {a['agent_id']} ({a['status']})")
+            print(f"{count}: {a['agent_id']} ({a['status']}) ({a['os_info']})")
     except Exception as e:
         print(RED + f"Error fetching agents: {e}" + RESET)
 
-
-def show_agent():
-    agent_id = input("Enter agent ID: ").strip()
-    try:
-        response = requests.get(f"{SERVER_URL}/agents/{agent_id}", timeout=10)
-        if response.status_code != 200:
-            print(RED + f"Agent {agent_id} not found." + RESET)
-            return
-
-        data = response.json()
-        print(YELLOW + f"Agent: {data['Agent Id']}" + RESET)
-        print(f" Hostname : {data['Hostname']}")
-        print(f" Local IP : {data['Local IP']}")
-        print(f" Status   : {data['Status']}")
-        print(f" Last Seen: {data['Last Seen']}")
-
-        print(BLUE + "\n--- Commands ---" + RESET)
-        for cmd in data["Commands"]:
-            print(f" [{cmd['Command Id']}] {cmd['Command']} -> {cmd['Status']}")
-            if cmd["Result"]:
-                print(f"   Result: {cmd['Result']}")
-    except Exception as e:
-        print(RED + f"Error fetching agent details: {e}" + RESET)
-
-
-def send_command():
-    agent_id = input("Enter agent ID: ").strip()
-    command  = input("Enter command: ").strip()
-    try:
-        payload = {"agent_id": agent_id, "command": encrypt(command)}
-        response = requests.post(f"{SERVER_URL}/queue", json=payload, timeout=10)
-
-        if response.status_code == 200:
-            data = response.json()
-            print(GREEN + f"Queued command {data['command_id']} for {agent_id}" + RESET)
-        else:
-            print(RED + f"Failed to queue command (status {response.status_code})." + RESET)
-    except Exception as e:
-        print(RED + f"Error sending command: {e}" + RESET)
-
-
-def list_tasks(status):
-    try:
-        response = requests.get(f"{SERVER_URL}/agents", timeout=10)
-        response.raise_for_status()
-        agents = response.json()
-
-        print(BLUE + f"--- {status} tasks ---" + RESET)
-        found = False
-        for a in agents:
-            detail = requests.get(f"{SERVER_URL}/agents/{a['agent_id']}", timeout=10).json()
-            for cmd in detail["Commands"]:
-                if cmd["Status"] == status:
-                    found = True
-                    print(f"Agent {a['agent_id']} -> [{cmd['Command Id']}] {cmd['Command']}")
-        if not found:
-            print("No tasks with that status.")
-    except Exception as e:
-        print(RED + f"Error listing tasks: {e}" + RESET)
 
 
 def main():

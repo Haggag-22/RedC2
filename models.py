@@ -8,6 +8,7 @@ class Agent(db.Model):
     agent_id = db.Column(db.String, primary_key=True)
     hostname = db.Column(db.String)
     local_ip = db.Column(db.String)
+    os_info = db.Column(db.String)
     last_seen = db.Column(db.DateTime(timezone=True))  
     status = db.Column(db.String)
     commands = db.relationship("Command", backref="agent", lazy=True)

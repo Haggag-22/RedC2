@@ -1,15 +1,15 @@
 {
-  "client_id": "DlI8hN8iK73Lx9YbyFsy2A",
-  "client_secret": "-VXV908pnsHqLkP7L0SZSCCtZDSuVA",
-  "username": "Frosty-Razzmatazz-23",
-  "password": "Of123456789@",
-  "user_agent": "C2/0.1 by u/Frosty-Razzmatazz-23",
+  "client_id": "vbeSlzd6A_7AR7YeZ8J-VQ",
+  "client_secret": "pD_tCn7_YEoWYu0z5frQPJ3HK0Bhkw",
+  "username": "Ok_Commission6715",
+  "password": "Ilikeapples1234#",
+  "user_agent":"RedTNT/0.1 by u/Ok_Commission6715",
 
   "server_host": "192.168.1.69",
-  "server_port": 5557,
+  "server_port": 6662,
 
   "database_uri": "sqlite:///redc2.db",
 
-  "crypto_key": "Of123456789@",
-  "subreddit": "taskdropbox"
+  "crypto_key": "Ilikeapples1234#",
+  "subreddit": "RedTNT"
 }

