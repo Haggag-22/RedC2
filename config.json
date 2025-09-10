@@ -2,14 +2,14 @@
   "client_id": "DlI8hN8iK73Lx9YbyFsy2A",
   "client_secret": "-VXV908pnsHqLkP7L0SZSCCtZDSuVA",
   "username": "Frosty-Razzmatazz-23",
-  "password": "Ilikeapples1234#",
+  "password": "Of123456789@",
   "user_agent": "C2/0.1 by u/Frosty-Razzmatazz-23",
 
-  "server_host": "192.168.1.76",
-  "server_port": 5555,
+  "server_host": "192.168.1.69",
+  "server_port": 5557,
 
   "database_uri": "sqlite:///redc2.db",
 
-  "crypto_key": "Ilikeapples1234",
+  "crypto_key": "Of123456789@",
   "subreddit": "taskdropbox"
 }
