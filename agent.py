@@ -2,7 +2,7 @@ import json, subprocess, time, uuid, socket, requests
 import base64
 
 
-SERVER_URL = "http://192.168.1.76:5555"
+SERVER_URL = "http://192.168.1.69:5555"
 hostname = socket.gethostname()
 mac = uuid.getnode()
 

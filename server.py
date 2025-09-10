@@ -181,7 +181,7 @@ def poll_reddit():
         user_agent=creds["user_agent"]
     )
 
-    SERVER_URL = "http://192.168.1.76:5555"  # Flask local
+    SERVER_URL = "http://192.168.1.69:5555"  # Flask local
     SUBREDDIT = "taskdropbox"
 
     while True:
@@ -233,4 +233,4 @@ if __name__ == "__main__":
     Thread(target=poll_reddit, daemon=True).start()
     Thread(target=monitor_agents, daemon=True).start()
 
-    app.run(host="192.168.1.76", port=5555, debug=True)
+    app.run(host="192.168.1.69", port=5555, debug=True)
