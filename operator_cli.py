@@ -50,11 +50,13 @@ def list_tasks(status):
 
         for count, cmd in enumerate(data, start=1):
             print(f"{YELLOW}{'-' * 100}{RESET}")
+            print(f"{YELLOW}{'-' * 100}{RESET}")
             print(f"Command Id : {cmd['Command Id']}")
             print(f"Agent Id   : {cmd['Agent Id']}")
             print(f"Command    : {cmd['Command']}")
             print(f"Status     : {cmd['Status']}")
             print(f"Result     :\n{cmd['Result']}")
+        
     except Exception as e:
         print(f"Error fetching tasks: {e}")
   
@@ -74,6 +76,7 @@ def show_agent_commands():
             return
 
         for count, cmd in enumerate(commands, start=1):
+            print(f"{YELLOW}{'-' * 100}{RESET}")
             print(f"{YELLOW}{'-' * 100}{RESET}")
             print(f"Command ID : {cmd['Command Id']}")
             print(f"Command    : {cmd['Command']}")
@@ -107,7 +110,9 @@ def send_command():
 
 def main():
     while True:
-        print(GREEN + "\n--- C2 Operator Menu ---" + RESET)
+        print(GREEN+"\n---------------------------------")
+        print("C2 Operator Menu")
+        print("---------------------------------"+RESET)
         print(BLUE + "1. List agents")
         print("2. Show agent details with commands and results")
         print("3. Send command to agent")

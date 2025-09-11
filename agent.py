@@ -42,7 +42,6 @@ def register_agent():
             "os_info": os_info
         }, timeout=10)
         r.raise_for_status()
-        print(f"[+] Registered {AGENT_ID} with server")
     except Exception as e:
         print(f"[!] Failed to register agent: {e}")
 
