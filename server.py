@@ -118,6 +118,11 @@ def queue_command():
         "command_id": new_cmd.id
     })
 
+@app.route("/tasks/<status>", methods=["GET"])
+def get_tasks():
+    data = request.get_json()
+
+    
 
 @app.route("/processed/<post_id>", methods=["GET"])
 def check_processed(post_id):
@@ -159,7 +164,7 @@ def list_agents():
 
 
 @app.route("/agents/<id>", methods=["GET"])
-def get_agents_with_commands(id):
+def get_agents_commands(id):
     agent = Agent.query.get(id)
     if not agent:
         return jsonify({"error": "agent not found"}), 404

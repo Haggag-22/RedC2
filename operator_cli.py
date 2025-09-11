@@ -37,6 +37,42 @@ def list_agents():
     except Exception as e:
         print(RED + f"Error fetching agents: {e}" + RESET)
 
+def list_tasks(status):
+    try:
+        response = requests.get(f"{SERVER_URL}/agents", timeout=10)
+        response.raise_for_status()
+        data = response.json()
+    except:
+        
+
+
+
+
+    
+def show_agent_commands():
+    try:
+        agent_id = input("Enter the Agent ID: ")
+        response = requests.get(f"{SERVER_URL}/agents/{agent_id}", timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        commands = data.get("Commands", [])
+
+        print(RED + "---- Agent Commands ----" + RESET)
+        print(f"Agent: {agent_id}")
+
+        if not commands:
+            print("No commands found for this agent.")
+            return
+
+        for count, cmd in enumerate(commands, start=1):
+            print(f"{YELLOW}{'-' * 100}{RESET}")
+            print(f"Command ID : {cmd['Command Id']}")
+            print(f"Command    : {cmd['Command']}")
+            print(f"Status     : {cmd['Status']}")
+            print(f"Result     :\n{cmd['Result']}")
+            
+    except Exception as e:
+        print(RED + f"Error fetching agent commands: {e}" + RESET)
 
 
 def main():
@@ -55,7 +91,7 @@ def main():
         if choice == "1":
             list_agents()
         elif choice == "2":
-            show_agent()
+            show_agent_commands()
         elif choice == "3":
             send_command()
         elif choice == "4":
