@@ -6,7 +6,7 @@
   "user_agent":"RedTNT/0.1 by u/Ok_Commission6715",
 
   "server_host": "192.168.1.69",
-  "server_port": 6662,
+  "server_port": 6655,
 
   "database_uri": "sqlite:///redc2.db",
 
