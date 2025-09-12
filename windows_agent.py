@@ -109,15 +109,19 @@ def execute_command(command):
                 "-NoProfile",
                 "-ExecutionPolicy", "Bypass",
                 "-Command",
-                f"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; {command} | Out-String"
+                (
+                    "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
+                    f"{command} | Out-String | ForEach-Object {{ $_.ToString().TrimEnd() }}"
+                )
             ]
+            # Explicitly capture as UTF-8
             result = subprocess.check_output(ps_command, stderr=subprocess.STDOUT)
-            return result.decode("utf-8", errors="ignore").strip()
+            return result.decode("utf-8", errors="ignore")
         else:
             result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
-            return result.decode("utf-8", errors="ignore").strip()
+            return result.decode("utf-8", errors="ignore")
     except subprocess.CalledProcessError as e:
-        return e.output.decode("utf-8", errors="ignore").strip()
+        return e.output.decode("utf-8", errors="ignore")
     
 if __name__ == "__main__":
     try:
