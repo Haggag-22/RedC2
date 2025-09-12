@@ -22,6 +22,8 @@ def xor(data: str, key=CRYPTO_KEY) -> str:
 def encrypt(data: str, key=CRYPTO_KEY) -> str:
     return base64.b64encode(xor(data, key).encode()).decode()
 
+def decrypt(data: str, key=CRYPTO_KEY) -> str:
+    return xor(base64.b64decode(data.encode()).decode(), key)
 def list_agents():
     try:
         response = requests.get(f"{SERVER_URL}/agents", timeout=10)

