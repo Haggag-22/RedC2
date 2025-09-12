@@ -134,7 +134,7 @@ def live_shell():
     agent_id = input("Enter Agent Id: ").strip()
 
     while True:
-        command = input(f"{agent_id}$ ").strip()
+        command = input(f"{RED}{agent_id}{RESET}{BLUE} ${RESET} ").strip()
         if command.lower() in ["exit", "quit", "back"]:
             print("[*] Leaving live shell...")
             break
