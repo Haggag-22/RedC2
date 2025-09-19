@@ -8,6 +8,7 @@ Do not use outside of authorized events or systems you do not own.
 - Agent registration and heartbeat  
 - Task queueing and result collection  
 - SQLite backend for storage  
-- Lightweight Flask-based API  
+- Lightweight Flask-based API
+- Sending commands through reddit channels and posts
 
 
